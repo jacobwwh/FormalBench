@@ -1,4 +1,5 @@
 import FormalBench
+from collections import defaultdict
 
 ABS_PATH = FormalBench.__path__[0] + "/assistants/examples"
 class JavaExample:
@@ -849,3 +850,5 @@ _GUIDANCE = {
     "guidance": _BAD_CAST_GUIDANCE
   }
 }
+
+_GUIDANCE = defaultdict(lambda: {"description": "", "guidance": ""}, _GUIDANCE)

@@ -46,6 +46,7 @@ class CoverageScore():
             if mutant == "Original":
                 continue
             total_mutants += 1
+            #print(mutant, n_errors)
             if n_errors == 0:
                 killed_mutants += 1
             else:
@@ -154,10 +155,11 @@ class CoverageScore():
         timeout: int
     ) -> Tuple[str, int]:
         
-        mutant_path = os.path.join(mutation_dir, mutant, basename)
+        mutant_path = os.path.join(mutation_dir, mutant, basename) #mutant: mutant number
         n_errors, output = self.verifier.verify(path=mutant_path,
                                                 basedir=mutant,
                                                 timeout=timeout)
+        print(f'mutant verification result: {n_errors}, details: {output}')
         return mutant, n_errors
     
 def eval_completeness(

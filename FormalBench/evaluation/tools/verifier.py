@@ -3,6 +3,7 @@ from typing import Tuple
 import re
 import os
 import docker
+from docker.errors import APIError, ImageNotFound
 import atexit
 from ..utils import execute_command, copy_to_container
 import FormalBench
@@ -79,20 +80,44 @@ class OpenJMLVerifier(Verifier):
         assert version in [21, 17], "OpenJML version must be either 21 or 17"
         self.home_dir = "/home/specInfer"
         self.image_name = "thanhlecong/openjml:latest"
+        print(f"Image name: {self.image_name}")
+        print("DOCKER_HOST:", os.getenv("DOCKER_HOST"))
+        print("DOCKER_CONTEXT:", os.getenv("DOCKER_CONTEXT"))
         self.client = docker.from_env()
-        self.container = self.client.containers.run(
-            self.image_name,
-                    "/bin/bash",
-                    detach=True,
-                    tty=True,
-                    volumes={
-                        os.getcwd(): {
-                            "bind": self.home_dir,
-                            "mode": "rw"
-                        }
-                    },
-            )
+        print("client base_url:", self.client.api.base_url)
+        print("server version:", self.client.version().get("Version"))
+        print(f"Client: {self.client}")
+        print(f"current dir: {os.getcwd()}")
 
+        #debug
+        try:
+            img = self.client.images.get("thanhlecong/openjml:latest")
+            print("Python can see image:", img.id)
+        except ImageNotFound:
+            print("Python CANNOT see image (different daemon/context)")
+        except APIError as e:
+            print("APIError:", e.status_code, e.explanation)
+
+        try:
+            self.container = self.client.containers.run(
+                self.image_name,
+                        "/bin/bash",
+                        detach=True,
+                        tty=True,
+                        volumes={
+                            os.getcwd(): {
+                                "bind": self.home_dir,
+                                "mode": "rw"
+                            }
+                        },
+                )
+        except APIError as e:
+            print("status:", getattr(e, "status_code", None))
+            print("explanation:", getattr(e, "explanation", None))
+            if getattr(e, "response", None) is not None:
+                print("response text:", e.response.text)
+            raise
+        
         self.tmp_dir = os.path.join("/tmp/")
         assert self.container.status == "created", "Container failed to start"
         atexit.register(self.clean_up)
@@ -120,7 +145,7 @@ class OpenJMLVerifier(Verifier):
         cmd = f"timeout {timeout} /home/openjml{self.openjml_version}/openjml --esc --prover=cvc4 --nullable-by-default --command=check --esc-max-warnings 1 {path_in_container}"
 
         cmd_splitted = cmd.split(" ")
-        print("Executing command: {}".format(cmd))
+        #print("Executing command: {}".format(cmd))
 
         # Call the docker container to run the command
         exec_result = self.container.exec_run(cmd_splitted)
@@ -155,10 +180,11 @@ class OpenJMLVerifier(Verifier):
         copy_to_container(self.container, path, tmp_dir)
         path_in_container = os.path.join(tmp_dir, os.path.basename(path))
 
-        cmd = f"timeout {timeout} /home/openjml{self.openjml_version}/openjml --esc --prover=cvc4 --nullable-by-default --esc-max-warnings 1 {path_in_container}"
+        cmd = f"timeout {timeout} /home/openjml{self.openjml_version}/openjml --esc --prover=cvc4 --nullable-by-default --esc-max-warnings 1 {path_in_container}"  #esc mode (static)
+        #cmd = f"timeout {timeout} /home/openjml{self.openjml_version}/openjml --rac --prover=cvc4 --nullable-by-default --esc-max-warnings 1 {path_in_container}"  #rac mode (dynamic)
 
         cmd_splitted = cmd.split(" ")
-        print("Executing command: {}".format(cmd))
+        #print("Executing command: {}".format(cmd))
 
         # Call the docker container to run the command
         exec_result = self.container.exec_run(cmd_splitted)
@@ -180,7 +206,7 @@ class OpenJMLVerifier(Verifier):
         compilation_error_pattern = re.compile(r"(\d+) error")
 
         # Remove local path from the output
-        print("Current working directory: {}".format(os.getcwd()))
+        #print("Current working directory: {}".format(os.getcwd()))
         output = output.replace(os.getcwd() + "/", "")
         failure_match = failure_count_pattern.search(output)
         warning_match = warning_count_pattern.search(output)
@@ -203,6 +229,12 @@ class OpenJMLVerifier(Verifier):
 
     def clean_up(self):
         print("Cleaning up the docker container")
+
+        #debug
+        print("base_url:", self.client.api.base_url)
+        print("container id:", self.container.id)
+        print("exists:", self.client.containers.get(self.container.id).status)
+
         self.container.stop()
         self.container.remove()
             
@@ -235,7 +267,7 @@ class OpenJMLVerifierWithoutDocker(Verifier):
         
         abs_path = os.path.abspath(path)
         command = "{} --esc --prover=cvc4 --nullable-by-default --esc-max-warnings 1 {}".format(self.exec_path, abs_path)
-        print("Executing command: {}".format(command))
+        #print("Executing command: {}".format(command))
         output = execute_command(command, timeout)
         print(output)
         return self.extract_output(output)
@@ -308,7 +340,7 @@ class FramaCVerifier(Verifier):
         cmd = "timeout {} frama-c -wp -wp-precond-weakening -wp-no-callee-precond -warn-signed-overflow -warn-unsigned-overflow -warn-invalid-pointer -wp-model Typed+ref -wp-prover Alt-Ergo,Z3 -wp-print -wp-timeout 10 {}".format(
             timeout, path_in_container)
         cmd_splitted = cmd.split(" ")
-        print("Executing command: {}".format(cmd))
+        #print("Executing command: {}".format(cmd))
 
         # Call the docker container to run the command
         exec_result = self.container.exec_run(cmd_splitted)

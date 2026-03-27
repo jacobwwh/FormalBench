@@ -38,7 +38,7 @@ def execute_command(command, timeout=None):
 
 def copy_to_container(container, src: str, dest: str) -> None:
     src_dir = os.path.dirname(src)
-    print("src_dir: {}".format(src_dir))
+    #print("src_dir: {}".format(src_dir))
     src_name = os.path.basename(src)
     tar_path = src + '.tar'
     

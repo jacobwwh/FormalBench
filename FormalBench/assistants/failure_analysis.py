@@ -77,7 +77,8 @@ def verification_failure_map(error_message):
         return "LargeShift"
 
     
-    raise ValueError(f"Unknown verification failure: {error_message}")
+    #raise ValueError(f"Unknown verification failure: {error_message}")
+    return f"Unknown Verification Failure: {error_message}"
 
 def error_map(error_message):
     return "SyntaxError"
@@ -88,5 +89,6 @@ def classify_failures(error_level, error_message):
     elif error_level == "verify":
         return verification_failure_map(error_message)
     else:
-        raise ValueError(f"Unknown error level: {error_level}")
+        print(f"Unknown error level: {error_level}")
+        return None
 

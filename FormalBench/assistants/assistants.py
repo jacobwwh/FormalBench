@@ -13,7 +13,7 @@ import torch
 from transformers import BitsAndBytesConfig
 import os
 
-def create_llm(model_name: str):
+def create_llm(model_name):
     if model_name == "gpt-3.5-turbo":
         print("Using gpt-3.5-turbo")
         return ChatOpenAI(
@@ -44,6 +44,60 @@ def create_llm(model_name: str):
             model="o3-mini",
             reasoning_effort="low",
         )
+    elif model_name == "gpt-5":
+        print("Using gpt-5")
+        #return ChatOpenAI(
+            #model="gpt-5",
+            #reasoning_effort="minimal",
+        #)
+        return ChatOpenAI( #gpt-5 models do not support temperature
+            model="openai/gpt-5", 
+            api_key=os.environ.get("OPENROUTER_API_KEY"), 
+            base_url="https://openrouter.ai/api/v1",
+            reasoning_effort="minimal",
+        )
+    elif model_name == "gpt-5-low":
+        print("Using gpt-5-low")
+        return ChatOpenAI(
+            model="gpt-5",
+            reasoning_effort="low",
+        )
+    elif model_name == "gpt-5-high":
+        print("Using gpt-5-high")
+        return ChatOpenAI(
+            model="gpt-5",
+            reasoning_effort="high",
+        )
+    elif model_name == "gpt-5-medium":
+        print("Using gpt-5-medium")
+        return ChatOpenAI(
+            model="gpt-5",
+            reasoning_effort="medium",
+        )
+    elif model_name == "gpt-5-mini":
+        print("Using gpt-5-mini")
+        #return ChatOpenAI(
+            #model="gpt-5-mini",
+            #temperature=0.7,
+        #)
+        return ChatOpenAI(
+            model="openai/gpt-5-mini", 
+            api_key=os.environ.get("OPENROUTER_API_KEY"), 
+            base_url="https://openrouter.ai/api/v1",
+            reasoning_effort="minimal",
+        )
+    elif model_name == "gpt-5-nano":
+        print("Using gpt-5-nano")
+        #return ChatOpenAI(
+            #model="gpt-5-nano",
+            #temperature=0.7,
+        #)
+        return ChatOpenAI(
+            model="openai/gpt-5-nano", 
+            api_key=os.environ.get("OPENROUTER_API_KEY"), 
+            base_url="https://openrouter.ai/api/v1",
+            reasoning_effort="minimal",
+        )
     elif model_name == "claude":
         return ChatAnthropic(
             model="claude-3-5-sonnet-20241022",
@@ -56,6 +110,12 @@ def create_llm(model_name: str):
             api_key=os.environ.get("DEEPSEEK_API_KEY"), 
             base_url="https://api.deepseek.com/v1",
             temperature=0.7
+        )
+    elif model_name == "deepseekr1":
+        return ChatOpenAI(
+            model="deepseek-reasoner",
+            api_key=os.environ.get("DEEPSEEK_API_KEY"),
+            base_url="https://api.deepseek.com/v1"
         )
     elif model_name in ["Qwen/CodeQwen1.5-7B-Chat"]:
         llm = HuggingFacePipeline.from_model_id(
@@ -160,6 +220,7 @@ class Assistant(ABC):
         new_messages = []
         while max_attempt >= 0:
             formatted_prompt = self.prompt_template.invoke(state)
+            #print(formatted_prompt)
             new_messages += formatted_prompt.to_messages()
             result = self.llm.invoke(formatted_prompt)
             new_messages.append(result)

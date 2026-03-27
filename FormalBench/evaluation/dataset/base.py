@@ -7,7 +7,7 @@ def load_base_dataset(data_dir=None, use_remote=True):
     assert data_dir is not None or use_remote, "local_dir should be None when use_remote is True"
     if data_dir is None:
         print("Downloading dataset to local directory")
-        local_dir = snapshot_download("thanhlecongg/FormalBench", repo_type="dataset")
+        local_dir = snapshot_download("FormalBench/FormalBench", repo_type="dataset", max_workers=2)
         print("Downloaded dataset successfully, storing in local directory: ", local_dir)
         data_dir = os.path.join(local_dir, "base")
 

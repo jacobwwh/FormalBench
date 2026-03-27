@@ -1,5 +1,7 @@
 .env
 .pytest_cache
+*.pyc
+__pycache__/
 tests/testcases/results/completeness
 FormalBench.egg-info
 executables
@@ -11,3 +13,5 @@ tests/testcases/specs/demo.c
 experiments/*
 *.sh
 Dockerfile
+data/*
+output/*
